@@ -3,6 +3,7 @@
 #include<string.h>
 #include<sys/wait.h>
 
+int bg=0;
 
 void read(char *cmd)
 {
@@ -10,7 +11,7 @@ void read(char *cmd)
 		cmd++;
 	*cmd=0;
 }
-void newparse(char *l,char **arg)
+int newparse(char *l,char **arg)
 {
 	int i=0;
 	arg[0]=strtok(l," -");
@@ -19,14 +20,20 @@ void newparse(char *l,char **arg)
 		i++;
 		arg[i]=strtok(NULL," ");
 	}
+	return i;
 }
 
 int getcommand(char *cmd,char **arg)
 {
 	read(cmd);		//INPUT
-	newparse(cmd,arg);
+	int len=newparse(cmd,arg);
 	if(arg[0]==NULL)
 		return 0;
+	if(strcmp(arg[len-1],"&")==0)
+	{
+		bg=1;
+		arg[len-1]='\0';
+	}
 	if (strcmp(arg[0],"cd") == 0 || strcmp(arg[0],"exit") == 0)
 		return 1;
 	else
@@ -64,9 +71,10 @@ int main(int argc)
 			}
 			else
 			{
-				do {
-					cpid = waitpid(pid,&status,WUNTRACED);
-				}while(!WIFEXITED(status) && !WIFSIGNALED(status));
+				if(bg==0)
+				{
+					waitpid(pid,&status,WUNTRACED);
+				}
 			}
 		}
 		else if(type == 1) 		// SYSTEM PROCESS
