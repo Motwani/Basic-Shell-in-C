@@ -2,25 +2,31 @@
 #include<stdlib.h>
 #include<string.h>
 #include<sys/wait.h>
-void parse(char *l, char **arg)		//PARSEING THE STRING
-{
-	while (*l != '\0') 
-	{       			
-		while (*l == ' ' || *l == '\t' || *l == '\n')
-			*l++ = '\0';     
-		*arg++ = l; 
-		while (*l != '\0' && *l != ' ' && *l != '\t' && *l != '\n') 
-			l++;            
-	}
-	*arg = '\0';              
-}
 
+
+void read(char *cmd)
+{
+	while((*cmd=getchar())!='\n')
+		cmd++;
+	*cmd=0;
+}
+void newparse(char *l,char **arg)
+{
+	int i=0;
+	arg[0]=strtok(l," -");
+	while(arg[i] != NULL)
+	{
+		i++;
+		arg[i]=strtok(NULL," ");
+	}
+}
 
 int getcommand(char *cmd,char **arg)
 {
-	//scanf("%[^\n]s",cmd);
-	gets(cmd);		//INPUT TAKEN AS STRING
-	parse(cmd,arg);
+	read(cmd);		//INPUT
+	newparse(cmd,arg);
+	if(arg[0]==NULL)
+		return 0;
 	if (strcmp(arg[0],"cd") == 0 || strcmp(arg[0],"exit") == 0)
 		return 1;
 	else
@@ -45,6 +51,8 @@ int main(int argc)
 		type=getcommand(cmd,arg);
 		if (type == 0)  // NEW PROCESS
 		{
+			if(arg[0]==NULL)
+				continue;
 			pid=fork();
 			if(pid == 0) 		//CHILD PROCESS
 			{
