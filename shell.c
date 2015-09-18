@@ -2,14 +2,28 @@
 #include<stdlib.h>
 #include<string.h>
 #include<sys/wait.h>
+#include<readline/readline.h>
+#include<readline/history.h>
 
 int bg=0;
+char prompt[5000];
 
 void read(char *cmd)
 {
 	while((*cmd=getchar())!='\n')
 		cmd++;
 	*cmd=0;
+}
+
+void newread()
+{
+		int p,q,i,j;
+		char person[100],system[100],drt[50];
+		p=getlogin_r(person,10000);
+		q=gethostname(system,1000);
+		getcwd(drt,50);
+		printf("%s@%s:~$%s",person,system,drt);
+		printf(">> ");
 }
 int newparse(char *l,char **arg)
 {
@@ -46,15 +60,11 @@ int main(int argc)
 	char cmd[100000];
 	int len=10000;
 	int type,status,p,q;
-	char person[10000],system[10000],drt[500];
+	int x;
 	char *arg[6400];
 	while(1)
 	{
-		p=getlogin_r(person,10000);
-		q=gethostname(system,1000);
-		getcwd(drt,50);
-		printf("%s@%s:~$%s",person,system,drt);
-		printf(">> ");
+		newread();
 		type=getcommand(cmd,arg);
 		if (type == 0)  // NEW PROCESS
 		{
@@ -71,10 +81,20 @@ int main(int argc)
 			}
 			else
 			{
-				if(bg==0)
+				if(bg==1)
 				{
-					waitpid(pid,&status,WUNTRACED);
+					/*while((x=waitpid(-1,&status,WNOHANG))>0)
+					{
+						if (x!=0 & x!=-1)
+						{
+							if(WIFEXITED(status))
+								printf("CHILD WITH PID %d HAS EXITED\n",x);
+						}
+
+					}*/
 				}
+				else
+					waitpid(pid,&status,WUNTRACED);
 			}
 		}
 		else if(type == 1) 		// SYSTEM PROCESS
