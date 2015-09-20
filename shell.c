@@ -7,14 +7,14 @@
 
 int bg=0;
 char prompt[5000];
-
+/*
 void read(char *cmd)
 {
 	while((*cmd=getchar())!='\n')
 		cmd++;
 	*cmd=0;
 }
-
+*/
 void newread()
 {
 		int p,q,i,j;
@@ -22,8 +22,20 @@ void newread()
 		p=getlogin_r(person,10000);
 		q=gethostname(system,1000);
 		getcwd(drt,50);
-		printf("%s@%s:~$%s",person,system,drt);
-		printf(">> ");
+		for(i=0,j=0;person[j]!='\0';i++,j++)
+			prompt[i]=person[j];
+		prompt[i++]='@';
+		for(j=0;system[j]!='\0';i++,j++)
+			prompt[i]=system[j];
+		prompt[i++]=':';
+		prompt[i++]='~';
+		prompt[i++]='$';
+		for(j=0;drt[j]!='\0';i++,j++)
+			prompt[i]=drt[j];
+		prompt[i++]='>';
+		prompt[i++]='>';
+		prompt[i++]=' ';
+		prompt[i]='\0';
 }
 int newparse(char *l,char **arg)
 {
@@ -39,7 +51,8 @@ int newparse(char *l,char **arg)
 
 int getcommand(char *cmd,char **arg)
 {
-	read(cmd);		//INPUT
+	cmd=readline(prompt);	//INPUT
+	//read(cmd);		
 	int len=newparse(cmd,arg);
 	if(arg[0]==NULL)
 		return 0;
