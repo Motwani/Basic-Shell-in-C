@@ -59,13 +59,13 @@ void piping(char **list,int len)
 {
 	int i,j,status;
 	int inp=0,out=0;
-	int inpind,outind;
+	int inpind=0,outind=0;
 	int infile,outfile;
 	int fd[1000][2];
-
 	for(i=0;i<len;i++)
 	{
-		char *cmd=*list;
+		char cmd[100];
+		strcpy(cmd,*list);
 		int x=0;
 		while(cmd[x]!='\0')
 		{
@@ -73,7 +73,6 @@ void piping(char **list,int len)
 			{
 				inp=1;
 				inpind=x;
-
 			}
 			else if(cmd[x] == '>')
 			{
@@ -84,48 +83,55 @@ void piping(char **list,int len)
 		}
 		char *rearg[6400];
 		int r=0;
-		rearg[0]=strtok(*list,"<>");
+		rearg[0]=strtok(cmd,"<>");
 		while(rearg[r]!=NULL)
 		{
+			//printf("%s\n",rearg[r]);
 			r++;
 			rearg[r]=strtok(NULL,"<>");
+		}
+		//printf("%d\n",r);
+		//sleep(2);
+		//printf("%d\n",r);
+		if(r==2)
+		{
+			rearg[1]=strtok(rearg[1]," ");
+		}
+		if(r==3)
+		{
+			rearg[2]=strtok(rearg[2]," ");
 		}
 		if(inpind < outind)
 		{
 			if(inp==1)
-				infile=open(rearg[1],O_RDONLY,0);
-			if(out==1)
 			{
-				if(inp==1)
-					outfile=open(rearg[2],O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
-				else if(inp==0)
-					outfile=open(rearg[1],O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+				infile=open(rearg[1],O_RDONLY);
+				outfile=open(rearg[2],O_CREAT| O_WRONLY, 0777);
 			}
+			else if(inp==0)
+					outfile=open(rearg[1],O_CREAT| O_WRONLY, 0777);
 		}
-		if(inpind > outind)
-		{
-			if(inp==1)
-			{
-				if(out==0)
-					infile=open(rearg[1],O_RDONLY,0);
-				else if(out==1)
-					infile=open(rearg[2],O_RDONLY,0);
-				if(out==1)
-					outfile=open(rearg[1],O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
-			}
-		}
-
+		else if(inpind > outind)
+				infile=open(rearg[1],O_RDONLY);
 		char *arg[6400];
-		char *newcmd=*list;
+		char *newcmd=cmd;
 		j=0;
-		if(rearg[0]!=NULL)
+		//printf("%d\n",r);
+		if(rearg[1]!=NULL)
 			newcmd=rearg[0];
+		//printf("$$%s$$\n",newcmd);
 		arg[0]=strtok(newcmd," -");
 		while(arg[j] != NULL)
 		{
+			//printf("$%s$\n",arg[j] );
 			j++;
 			arg[j]=strtok(NULL," ");
-		}
+		}/*
+		while(*arg!=NULL)
+		{
+			printf("%s\n",*arg);
+			*arg++;
+		}*/
 		if(pipe(fd[i])<0)
 		{
 			perror("Pipe was not implemented\n");
@@ -141,21 +147,30 @@ void piping(char **list,int len)
 				{
 					if(inp==1)
 					{
+						//printf("HERE\n");
+						//infile=open(rearg[1],O_RDONLY);
 						dup2(infile,0);
 						close(infile);
+						//close(fd[i][0]);
+						//close(fd[i][0]);
 						inp=0;
 					}
 					if(out==1)
 					{
+						//printf("IN HERE\n");
+						//outfile=open(rearg[2],O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
 						dup2(outfile,1);
 						close(outfile);
+						//close(fd[i][1]);
 						out=0;
 					}
 				}
 				else
 				{
+					
 					if(i!=0)
 					{
+						//printf("THIS\n");
 						if(inp==1)
 						{
 							dup2(infile,0);
@@ -169,45 +184,64 @@ void piping(char **list,int len)
 						}
 						if(out==1)
 						{
+							perror("OUT HERE");
 							dup2(outfile,1);
 							close(outfile);
 							out=0;
 						}
+						//close(fd[i-1][0]);
+						//close(fd[i-1][1]);
+						//close(fd[i][1]);
+						//close(fd[i][0]);
+						//printf("THAT\n");
 					}
 					if(i!=len-1)
 					{
+						perror("IN HERE");
 						if(inp==1)
 						{
+							printf("INP\n");
 							dup2(infile,0);
 							close(infile);
 							inp=0;
 						}
 						if(out==1)
 						{
+							printf("OUT\n");
 							dup2(outfile,1);
 							close(outfile);
 							out=0;
 						}
-						else if(dup2(fd[i][1],1)<0)
+						if(dup2(fd[i][1],1)<0)
 						{
 							perror("DUP2 Error\n");
 							exit(EXIT_FAILURE);
 						}
+						else
+						{
+							perror("HERE");
+							//	close(fd[i][0]);
+						}
 					}
 				}
+				//printf("reached Here\n");
 				if (strcmp(arg[0],"cd") == 0)
 					chdir("/home");
 				if (strcmp(arg[0],"exit")==0)
 					exit(0);
-				int a=execvp(*arg,arg);
-				if(a < 0)
+				//printf("IN HERE\n");
+				perror("BEFORE EXEC");
+				int a=execvp(arg[0],arg);
+				//perror("Execvp");
+				if(a< 0)
 				{
 					printf("NO SUCH COMMAND\n");
 					exit(-1);
 				}
-			}
+			}	
 		}
-		*list++;
+
+	*list++;
 	}
 
 }
@@ -226,23 +260,31 @@ int getcommand(char *cmd,char **arg,char *prompt)
 	/*END of PIPE SPLIT CODE*/
 	if(i==1)
 	{
-		len=newparse(*list,arg);
-		char *check[100];
+		/*char *check[100];
+		char try[100];
+		strcpy(try,*list);
+		int ss;
+		if(ss=reparse(try,check) > 1)
+		{
+			piping(list,1);
+		}
+		*/
+		char try[100];
+		strcpy(try,*list);
+		len=newparse(try,arg);
 		if(arg[0]==NULL)
 			return 0;
-		if(strcmp(arg[len-1],"&")==0)
+		if(arg[len-1][0] == '&')
 		{
 			bg=1;
 			arg[len-1]='\0';
 		}
-		if(reparse(*list,check) > 0)
-			piping(list,1);
-		else 
-		{
-			if (strcmp(arg[0],"cd") == 0 || strcmp(arg[0],"exit") == 0)
+		if (strcmp(arg[0],"cd") == 0 || strcmp(arg[0],"exit") == 0)
 				return 1;
-			else
-				return 0;
+		else
+		{
+				piping(list,i);
+				return 2;
 		}
 	}
 	else
@@ -291,7 +333,7 @@ int main(int argc)
 					}
 				}
 				else
-					waitpid(pid,&status,WUNTRACED);
+					waitpid(pid,&status,WUNTRACED||WNOHANG);
 			}
 		}
 		else if(type == 1) 		// SYSTEM PROCESS
